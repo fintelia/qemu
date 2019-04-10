@@ -237,6 +237,7 @@ DeviceState *sifive_clint_create(hwaddr addr, hwaddr size, uint32_t num_harts,
         env->timer = timer_new_ns(QEMU_CLOCK_VIRTUAL,
                                   &sifive_clint_timer_cb, cpu);
         env->timecmp = 0;
+        env->time_freq = SIFIVE_CLINT_TIMEBASE_FREQ;
     }
 
     DeviceState *dev = qdev_create(NULL, TYPE_SIFIVE_CLINT);

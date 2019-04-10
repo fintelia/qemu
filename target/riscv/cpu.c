@@ -103,12 +103,20 @@ static void set_resetvec(CPURISCVState *env, int resetvec)
 #endif
 }
 
+static void set_time_freq(CPURISCVState *env, uint64_t freq)
+{
+#ifndef CONFIG_USER_ONLY
+    env->time_freq = freq;
+#endif
+}
+
 static void riscv_any_cpu_init(Object *obj)
 {
     CPURISCVState *env = &RISCV_CPU(obj)->env;
     set_misa(env, RVXLEN | RVI | RVM | RVA | RVF | RVD | RVC | RVU);
     set_versions(env, USER_VERSION_2_02_0, PRIV_VERSION_1_10_0);
     set_resetvec(env, DEFAULT_RSTVEC);
+    set_time_freq(env, NANOSECONDS_PER_SECOND);
 }
 
 #if defined(TARGET_RISCV32)
@@ -121,6 +129,7 @@ static void rv32gcsu_priv1_09_1_cpu_init(Object *obj)
     set_resetvec(env, DEFAULT_RSTVEC);
     set_feature(env, RISCV_FEATURE_MMU);
     set_feature(env, RISCV_FEATURE_PMP);
+    set_time_freq(env, NANOSECONDS_PER_SECOND);
 }
 
 static void rv32gcsu_priv1_10_0_cpu_init(Object *obj)
@@ -131,6 +140,7 @@ static void rv32gcsu_priv1_10_0_cpu_init(Object *obj)
     set_resetvec(env, DEFAULT_RSTVEC);
     set_feature(env, RISCV_FEATURE_MMU);
     set_feature(env, RISCV_FEATURE_PMP);
+    set_time_freq(env, NANOSECONDS_PER_SECOND);
 }
 
 static void rv32imacu_nommu_cpu_init(Object *obj)
@@ -140,6 +150,7 @@ static void rv32imacu_nommu_cpu_init(Object *obj)
     set_versions(env, USER_VERSION_2_02_0, PRIV_VERSION_1_10_0);
     set_resetvec(env, DEFAULT_RSTVEC);
     set_feature(env, RISCV_FEATURE_PMP);
+    set_time_freq(env, NANOSECONDS_PER_SECOND);
 }
 
 #elif defined(TARGET_RISCV64)
@@ -152,6 +163,7 @@ static void rv64gcsu_priv1_09_1_cpu_init(Object *obj)
     set_resetvec(env, DEFAULT_RSTVEC);
     set_feature(env, RISCV_FEATURE_MMU);
     set_feature(env, RISCV_FEATURE_PMP);
+    set_time_freq(env, NANOSECONDS_PER_SECOND);
 }
 
 static void rv64gcsu_priv1_10_0_cpu_init(Object *obj)
@@ -162,6 +174,7 @@ static void rv64gcsu_priv1_10_0_cpu_init(Object *obj)
     set_resetvec(env, DEFAULT_RSTVEC);
     set_feature(env, RISCV_FEATURE_MMU);
     set_feature(env, RISCV_FEATURE_PMP);
+    set_time_freq(env, NANOSECONDS_PER_SECOND);
 }
 
 static void rv64imacu_nommu_cpu_init(Object *obj)
@@ -171,6 +184,7 @@ static void rv64imacu_nommu_cpu_init(Object *obj)
     set_versions(env, USER_VERSION_2_02_0, PRIV_VERSION_1_10_0);
     set_resetvec(env, DEFAULT_RSTVEC);
     set_feature(env, RISCV_FEATURE_PMP);
+    set_time_freq(env, NANOSECONDS_PER_SECOND);
 }
 
 #endif
