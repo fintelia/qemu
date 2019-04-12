@@ -57,6 +57,10 @@ static void sifive_clint_write_timecmp(RISCVCPU *cpu, uint64_t value)
     /* back to ns (note args switched in muldiv64) */
     next = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) +
         muldiv64(diff, NANOSECONDS_PER_SECOND, SIFIVE_CLINT_TIMEBASE_FREQ);
+    if(next > INT64_MAX) {
+        next = INT64_MAX;
+    }
+
     timer_mod(cpu->env.timer, next);
 }
 
