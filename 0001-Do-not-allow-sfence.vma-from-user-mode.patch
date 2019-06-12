@@ -1,0 +1,31 @@
+From 83014d5d97d41f992556a9cf7fbb447d85d78283 Mon Sep 17 00:00:00 2001
+From: Jonathan Behrens <fintelia@gmail.com>
+Date: Mon, 1 Apr 2019 14:41:50 -0400
+Subject: [PATCH] Do not allow sfence.vma from user mode
+
+Signed-off-by: Jonathan Behrens <fintelia@gmail.com>
+---
+ target/riscv/op_helper.c | 7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+diff --git a/target/riscv/op_helper.c b/target/riscv/op_helper.c
+index b7dc18a41e..644d0fb35f 100644
+--- a/target/riscv/op_helper.c
++++ b/target/riscv/op_helper.c
+@@ -145,9 +145,10 @@ void helper_tlb_flush(CPURISCVState *env)
+ {
+     RISCVCPU *cpu = riscv_env_get_cpu(env);
+     CPUState *cs = CPU(cpu);
+-    if (env->priv == PRV_S &&
+-        env->priv_ver >= PRIV_VERSION_1_10_0 &&
+-        get_field(env->mstatus, MSTATUS_TVM)) {
++    if (!(env->priv >= PRV_S) ||
++        (env->priv == PRV_S &&
++         env->priv_ver >= PRIV_VERSION_1_10_0 &&
++         get_field(env->mstatus, MSTATUS_TVM))) {
+         riscv_raise_exception(env, RISCV_EXCP_ILLEGAL_INST, GETPC());
+     } else {
+         tlb_flush(cs);
+-- 
+2.20.1
+

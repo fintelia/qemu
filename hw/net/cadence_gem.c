@@ -31,6 +31,7 @@
 #include "sysemu/dma.h"
 #include "net/checksum.h"
 
+#define CADENCE_GEM_ERR_DEBUG
 #ifdef CADENCE_GEM_ERR_DEBUG
 #define DB_PRINT(...) do { \
     fprintf(stderr,  ": %s: ", __func__); \
@@ -532,7 +533,6 @@ static int gem_can_receive(NetClientState *nc)
 
     if (s->can_rx_state != 0) {
         s->can_rx_state = 0;
-        DB_PRINT("can receive\n");
     }
     return 1;
 }
@@ -894,14 +894,18 @@ static ssize_t gem_receive(NetClientState *nc, const uint8_t *buf, size_t size)
     int maf;
     int q = 0;
 
+    DB_PRINT("A");
+
     s = qemu_get_nic_opaque(nc);
 
+    DB_PRINT("B");
     /* Is this destination MAC address "for us" ? */
     maf = gem_mac_address_filter(s, buf);
     if (maf == GEM_RX_REJECT) {
         return -1;
     }
 
+    DB_PRINT("C");
     /* Discard packets with receive length error enabled ? */
     if (s->regs[GEM_NWCFG] & GEM_NWCFG_LERR_DISC) {
         unsigned type_len;
@@ -917,6 +921,7 @@ static ssize_t gem_receive(NetClientState *nc, const uint8_t *buf, size_t size)
         }
     }
 
+    DB_PRINT("D");
     /*
      * Determine configured receive buffer offset (probably 0)
      */
@@ -930,6 +935,7 @@ static ssize_t gem_receive(NetClientState *nc, const uint8_t *buf, size_t size)
                  GEM_DMACFG_RBUFSZ_S) * GEM_DMACFG_RBUFSZ_MUL;
     bytes_to_copy = size;
 
+    DB_PRINT("E");
     /* Hardware allows a zero value here but warns against it. To avoid QEMU
      * indefinite loops we enforce a minimum value here
      */
@@ -982,8 +988,9 @@ static ssize_t gem_receive(NetClientState *nc, const uint8_t *buf, size_t size)
             return -1;
         }
 
-        DB_PRINT("copy %d bytes to 0x%x\n", MIN(bytes_to_copy, rxbufsize),
-                rx_desc_get_buffer(s->rx_desc[q]));
+        DB_PRINT("copy %d bytes to 0x%" HWADDR_PRIx "\n",
+                 MIN(bytes_to_copy, rxbufsize),
+                 rx_desc_get_buffer(s, s->rx_desc[q]));
 
         /* Copy packet data to emulated DMA buffer */
         address_space_write(&s->dma_as, rx_desc_get_buffer(s, s->rx_desc[q]) +
@@ -1040,6 +1047,8 @@ static ssize_t gem_receive(NetClientState *nc, const uint8_t *buf, size_t size)
 
         gem_get_rx_desc(s, q);
     }
+
+    DB_PRINT("F");
 
     /* Count it */
     gem_receive_updatestats(s, buf, size);
@@ -1117,8 +1126,6 @@ static void gem_transmit(CadenceGEMState *s)
         return;
     }
 
-    DB_PRINT("\n");
-
     /* The packet we will hand off to QEMU.
      * Packets scattered across multiple descriptors are gathered to this
      * one contiguous buffer first.
@@ -1156,7 +1163,7 @@ static void gem_transmit(CadenceGEMState *s)
             if (tx_desc_get_length(desc) > sizeof(tx_packet) -
                                                (p - tx_packet)) {
                 DB_PRINT("TX descriptor @ 0x%x too large: size 0x%x space " \
-                         "0x%x\n", (unsigned)packet_desc_addr,
+                         "0x%" HWADDR_PRIx "\n", (unsigned)packet_desc_addr,
                          (unsigned)tx_desc_get_length(desc),
                          sizeof(tx_packet) - (p - tx_packet));
                 break;

@@ -1,0 +1,29 @@
+From 75dab35c1b7a99db66deec9340cf695150be7cb2 Mon Sep 17 00:00:00 2001
+From: Jonathan Behrens <fintelia@gmail.com>
+Date: Mon, 6 May 2019 11:24:42 -0400
+Subject: [PATCH] target/riscv: only flush TLB if SATP.ASID changes
+
+There is an analogous change for ARM here:
+https://patchwork.kernel.org/patch/10649857
+---
+ target/riscv/csr.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/target/riscv/csr.c b/target/riscv/csr.c
+index 6083c782a1..1ec1222da1 100644
+--- a/target/riscv/csr.c
++++ b/target/riscv/csr.c
+@@ -732,7 +732,9 @@ static int write_satp(CPURISCVState *env, int csrno, target_ulong val)
+         if (env->priv == PRV_S && get_field(env->mstatus, MSTATUS_TVM)) {
+             return -1;
+         } else {
+-            tlb_flush(CPU(riscv_env_get_cpu(env)));
++            if((val ^ env->satp) & SATP_ASID) {
++                tlb_flush(CPU(riscv_env_get_cpu(env)));
++            }
+             env->satp = val;
+         }
+     }
+-- 
+2.20.1
+

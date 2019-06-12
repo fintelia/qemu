@@ -383,19 +383,27 @@ static void riscv_virt_board_init(MachineState *machine)
                                 mask_rom);
 
     uint64_t entry = memmap[VIRT_DRAM].base;
-    if (machine->firmware && machine->kernel_filename) {
+    if (machine->firmware) {
         uint64_t kernel_start, kernel_end;
         entry = load_firmware_and_kernel(machine->firmware,
                                          machine->kernel_filename,
+                                         memmap[VIRT_DRAM].base,
                                          machine->ram_size, &kernel_start,
                                          &kernel_end);
 
-        qemu_fdt_setprop_cells(fdt, "/chosen", "riscv,kernel-end",
-                               kernel_end >> 32, kernel_end);
-        qemu_fdt_setprop_cells(fdt, "/chosen", "riscv,kernel-start",
-                               kernel_start >> 32, kernel_start);
+        if (machine->kernel_filename) {
+            qemu_fdt_setprop_cells(fdt, "/chosen", "riscv,kernel-end",
+                                   kernel_end >> 32, kernel_end);
+            qemu_fdt_setprop_cells(fdt, "/chosen", "riscv,kernel-start",
+                                   kernel_start >> 32, kernel_start);
+        }
     } else if (machine->kernel_filename) {
-        entry = load_kernel(machine->kernel_filename);
+        warn_report("The -kernel option currently defaults to running without "
+                    "firmware but this may change. Consider using -bios flag "
+                    "guarantee to retain current behavior.");
+        entry = load_firmware_and_kernel(machine->kernel_filename, NULL,
+                                         memmap[VIRT_DRAM].base,
+                                         machine->ram_size, NULL, NULL);
     }
 
     if (machine->kernel_filename && machine->initrd_filename) {
